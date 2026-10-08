@@ -11,22 +11,19 @@ var hidden = false
 // Atoll: when its panel is open, widen the bar's notch gap so the pills wrap around it.
 // Tunables live in notchguard.conf (re-read on every open/close, so no rebuild needed).
 let confPath = NSString(string: "~/.config/sketchybar/helpers/notchguard.conf").expandingTildeInPath
-func confText(_ key: String) -> String? {
-  guard let text = try? String(contentsOfFile: confPath, encoding: .utf8) else { return nil }
+// Parsed once a second (see reloadConf) instead of on every mouse move.
+var confValues: [String: String] = [:]
+func reloadConf() {
+  guard let text = try? String(contentsOfFile: confPath, encoding: .utf8) else { return }
+  var v: [String: String] = [:]
   for line in text.split(separator: "\n") {
     let kv = line.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-    if kv.count == 2, kv[0] == key { return kv[1] }
+    if kv.count == 2, !kv[0].hasPrefix("#") { v[kv[0]] = kv[1] }
   }
-  return nil
+  confValues = v
 }
-func conf(_ key: String, _ fallback: Double) -> Double {
-  guard let text = try? String(contentsOfFile: confPath, encoding: .utf8) else { return fallback }
-  for line in text.split(separator: "\n") {
-    let kv = line.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-    if kv.count == 2, kv[0] == key, let v = Double(kv[1]) { return v }
-  }
-  return fallback
-}
+func confText(_ key: String) -> String? { confValues[key] }
+func conf(_ key: String, _ fallback: Double) -> Double { confValues[key].flatMap(Double.init) ?? fallback }
 var atollOpenWidth: CGFloat { CGFloat(conf("atoll_open_width", 690)) }
 let atollOpenHeight: CGFloat = 200   // approx. height of the open panel
 let gapClosed = 210
@@ -193,7 +190,8 @@ NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { 
 Timer.scheduledTimer(withTimeInterval: 1.0 / 20, repeats: true) { _ in check() }  // fallback
 readLeftGuard()
 rebuildZones()
-Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in readLeftGuard() }
+reloadConf()
+Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in readLeftGuard(); reloadConf() }
 NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                        object: nil, queue: .main) { _ in rebuildZones() }
 // Ask for Accessibility once; keep retrying until it's granted.

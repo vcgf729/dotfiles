@@ -52,6 +52,11 @@ sketchybar --add item volume right \
 
 sketchybar --update
 
+# Hidden item that tells NotchGuard where the workspace numbers end
+sketchybar --add item guard_zone left \
+  --set guard_zone drawing=off script="$PLUGIN_DIR/guard_zone.sh" \
+  --subscribe guard_zone aerospace_workspace_change space_windows_change front_app_switched
+
 # Hidden item that reacts to volume/brightness changes (Atoll's HUD)
 sketchybar --add item atoll_hud left \
   --set atoll_hud drawing=off script="$PLUGIN_DIR/atoll_hud.sh" \

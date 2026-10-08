@@ -79,11 +79,28 @@ func log(_ msg: String) {
 }
 var hoverStart: Date?
 
+// Right edge of the Apple logo + workspace numbers (written by guard_zone.sh)
+var leftGuard: CGFloat = 0
+func readLeftGuard() {
+  let v = (try? String(contentsOfFile: "/tmp/sketchybar_guard_left", encoding: .utf8))
+    .flatMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) } ?? 0
+  if CGFloat(v) != leftGuard { leftGuard = CGFloat(v); rebuildZones() }
+}
+
+// Places where the top edge should NOT reveal the macOS menu bar.
+func guardRanges(_ s: NSScreen) -> [ClosedRange<CGFloat>] {
+  var r: [ClosedRange<CGFloat>] = []
+  if let n = notchRange(s) { r.append(n) }
+  if leftGuard > 0 { r.append(s.frame.minX...(s.frame.minX + leftGuard)) }
+  return r
+}
+
 func check(_ dy: CGFloat = 0) {
   let m = NSEvent.mouseLocation
   guard let screen = NSScreen.screens.first(where: { NSMouseInRect(m, $0.frame, false) }) else { return }
   let fromTop = screen.frame.maxY - m.y
   let inNotch = notchRange(screen)?.contains(m.x) ?? false
+  let inGuard = guardRanges(screen).contains { $0.contains(m.x) }
 
   // Track Atoll: opens when hovering the notch, closes once the mouse leaves the open panel.
   if notchRange(screen) != nil {
@@ -109,14 +126,14 @@ func check(_ dy: CGFloat = 0) {
   // Guard zone: 12pt deep, plus look-ahead so fast upward flicks are caught
   // before they reach the edge (dy < 0 means moving up).
   let predicted = fromTop + min(dy, 0) * 2
-  if inNotch && (fromTop <= 12 || predicted <= 12) {
+  if inGuard && (fromTop <= 12 || predicted <= 12) {
     // Keep the cursor 14pt below the edge: still on the notch (Atoll), but off the edge.
     let primaryH = NSScreen.screens[0].frame.height
     CGWarpMouseCursorPosition(CGPoint(x: m.x, y: primaryH - screen.frame.maxY + 14))
     CGAssociateMouseAndMouseCursorPosition(1)
     return
   }
-  if !hidden && fromTop <= 3 && !inNotch {
+  if !hidden && fromTop <= 3 && !inGuard {
     hidden = true
     sb(["--animate", "tanh", "10", "--bar", "y_offset=-60"])
   } else if hidden && fromTop > 50 {
@@ -135,8 +152,8 @@ var tap: CFMachPort?
 
 func rebuildZones() {
   let primaryH = NSScreen.screens[0].frame.height
-  zones = NSScreen.screens.compactMap { s in
-    notchRange(s).map { NotchZone(xRange: $0, top: primaryH - s.frame.maxY) }
+  zones = NSScreen.screens.flatMap { s in
+    guardRanges(s).map { NotchZone(xRange: $0, top: primaryH - s.frame.maxY) }
   }
 }
 
@@ -174,7 +191,9 @@ let eventSource = CGEventSource(stateID: .combinedSessionState)
 eventSource?.localEventsSuppressionInterval = 0  // no cursor freeze after a nudge
 NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { e in check(e.deltaY) }  // deltaY < 0 = moving up
 Timer.scheduledTimer(withTimeInterval: 1.0 / 20, repeats: true) { _ in check() }  // fallback
+readLeftGuard()
 rebuildZones()
+Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in readLeftGuard() }
 NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                        object: nil, queue: .main) { _ in rebuildZones() }
 // Ask for Accessibility once; keep retrying until it's granted.

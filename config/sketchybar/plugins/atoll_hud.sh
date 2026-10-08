@@ -3,6 +3,17 @@
 # bar's notch gap to hug it, then slide back once the HUD goes away.
 [ "$SENDER" = "volume_change" ] || [ "$SENDER" = "brightness_change" ] || exit 0
 zmodload zsh/datetime
+
+# Ignore auto-brightness: it changes brightness in tiny gradual steps, while the
+# brightness keys jump by ~6%. Only a jump that big means Atoll's HUD is showing.
+if [ "$SENDER" = "brightness_change" ]; then
+  LAST_FILE="/tmp/sketchybar_brightness.$UID"
+  NOW=$(( INFO <= 1.0 ? INFO * 100.0 : INFO ))
+  LAST=$(cat "$LAST_FILE" 2>/dev/null || echo $NOW)
+  echo $NOW > "$LAST_FILE"
+  DELTA=$(( NOW > LAST ? NOW - LAST : LAST - NOW ))
+  (( DELTA < 4 )) && exit 0
+fi
 CONF="$HOME/.config/sketchybar/helpers/notchguard.conf"
 typeset -A C
 for k v in $(awk -F= '/^[a-z_]+ *=/{gsub(/ /,""); print $1, $2}' "$CONF" 2>/dev/null); do C[$k]=$v; done

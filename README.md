@@ -43,7 +43,14 @@ macOS settings to flip by hand.
 A tiny helper that slides the bar away while the macOS menu bar is showing,
 keeps the cursor off the top edge over the notch (so going for Atoll doesn't
 reveal the menu bar), and resizes the bar's notch gap when Atoll opens.
-Timing and sizes live in `config/sketchybar/helpers/notchguard.conf`.
+Timing and sizes live in `config/sketchybar/helpers/notchguard.conf` and are
+re-read live, so tweaking them needs no rebuild.
+
+NotchGuard needs **Accessibility** permission to fully block the menu bar.
+`install.sh` signs it ad hoc, so every rebuild changes its signature and macOS
+silently stops trusting it. After a rebuild, remove NotchGuard from
+Privacy & Security → Accessibility with **−** and add it again with **+**.
+Just toggling the old entry off and on is not enough.
 
 ## Credits
 

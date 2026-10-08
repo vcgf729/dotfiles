@@ -65,10 +65,19 @@ func sb(_ args: [String]) {
 }
 
 // Horizontal range of the notch on this screen, if it has one.
-func notchRange(_ s: NSScreen) -> ClosedRange<CGFloat>? {
+func notchRange(_ s: NSScreen, pad: CGFloat = notchPad) -> ClosedRange<CGFloat>? {
   guard let l = s.auxiliaryTopLeftArea, let r = s.auxiliaryTopRightArea else { return nil }
-  return (s.frame.minX + l.maxX - notchPad)...(s.frame.minX + r.minX + notchPad)
+  return (s.frame.minX + l.maxX - pad)...(s.frame.minX + r.minX + pad)
 }
+
+// Small log of why the bar's gap changed: /tmp/notchguard.log
+func log(_ msg: String) {
+  let line = "\(Date().formatted(date: .omitted, time: .standard)) \(msg)\n"
+  let url = URL(fileURLWithPath: "/tmp/notchguard.log")
+  if let h = try? FileHandle(forWritingTo: url) { h.seekToEndOfFile(); h.write(line.data(using: .utf8)!); try? h.close() }
+  else { try? line.write(to: url, atomically: true, encoding: .utf8) }
+}
+var hoverStart: Date?
 
 func check(_ dy: CGFloat = 0) {
   let m = NSEvent.mouseLocation
@@ -79,8 +88,22 @@ func check(_ dy: CGFloat = 0) {
   // Track Atoll: opens when hovering the notch, closes once the mouse leaves the open panel.
   if notchRange(screen) != nil {
     let fromCenter = abs(m.x - screen.frame.midX)
-    if !atollOpen && inNotch && fromTop <= 32 { setAtoll(true) }
-    else if atollOpen && (fromCenter > atollOpenWidth / 2 + 8 || fromTop > atollOpenHeight + 8) { setAtoll(false) }
+    // "Open" only once the mouse has rested on the notch itself (not the padded
+    // guard zone) for as long as Atoll needs before it opens.
+    let onNotch = (notchRange(screen, pad: CGFloat(conf("atoll_hover_pad", 4)))?.contains(m.x) ?? false) && fromTop <= 32
+    if !atollOpen {
+      if onNotch {
+        if hoverStart == nil { hoverStart = Date() }
+        if Date().timeIntervalSince(hoverStart!) >= conf("atoll_hover_delay", 0.12) {
+          hoverStart = nil
+          log("open  (mouse on notch at x=\(Int(m.x)) y=\(Int(fromTop)) from top)")
+          setAtoll(true)
+        }
+      } else { hoverStart = nil }
+    } else if fromCenter > atollOpenWidth / 2 + 8 || fromTop > atollOpenHeight + 8 {
+      log("close (mouse left Atoll at x=\(Int(m.x)) y=\(Int(fromTop)) from top)")
+      setAtoll(false)
+    }
   }
 
   // Guard zone: 12pt deep, plus look-ahead so fast upward flicks are caught

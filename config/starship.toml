@@ -1,0 +1,57 @@
+# Starship — black & white pill (white → dark gray)
+format = """
+[](#ffffff)\
+$os$username\
+[](bg:#d4d4d4 fg:#ffffff)\
+$directory\
+[](fg:#d4d4d4 bg:#8a8a8a)\
+$git_branch$git_status\
+[](fg:#8a8a8a bg:#4a4a4a)\
+$cmd_duration\
+[](fg:#4a4a4a bg:#2a2a2a)\
+$time\
+[ ](fg:#2a2a2a)\
+$character"""
+
+[os]
+disabled = false
+style = "bg:#ffffff fg:#000000"
+format = "[$symbol]($style)"
+
+[os.symbols]
+Macos = " "
+
+[username]
+show_always = true
+style_user = "bg:#ffffff fg:#000000"
+style_root = "bg:#ffffff fg:#000000 bold"
+format = "[ $user ]($style)"
+
+[directory]
+style = "bg:#d4d4d4 fg:#000000"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:#8a8a8a fg:#000000"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "bg:#8a8a8a fg:#000000"
+format = "[($all_status$ahead_behind )]($style)"
+
+[cmd_duration]
+style = "bg:#4a4a4a fg:#ffffff"
+format = "[ $duration ]($style)"
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#2a2a2a fg:#ffffff"
+format = "[  $time ]($style)"
+
+[character]
+success_symbol = "[❯](bold #ffffff)"
+error_symbol = "[❯](bold #777777)"

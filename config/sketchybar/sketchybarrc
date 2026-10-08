@@ -1,0 +1,71 @@
+#!/bin/zsh
+# SketchyBar — black & white, AeroSpace workspaces
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+FONT="JetBrainsMono Nerd Font"
+
+# Wait for AeroSpace at login (up to ~30s) so the workspace items get created
+for i in {1..60}; do aerospace list-workspaces --all >/dev/null 2>&1 && break; sleep 0.5; done
+
+sketchybar --bar position=top height=32 margin=8 y_offset=2 corner_radius=10 \
+  color=0x00000000 border_width=0 blur_radius=0 \
+  shadow=off sticky=on padding_left=8 padding_right=8 notch_width=210
+
+sketchybar --default icon.font="$FONT:Bold:14.0" label.font="$FONT:Bold:13.0" \
+  icon.color=0xffffffff label.color=0xffffffff \
+  padding_left=4 padding_right=4 \
+  icon.padding_left=6 icon.padding_right=4 label.padding_left=4 label.padding_right=6
+
+# ---- Left: apple + workspaces + focused app ----
+sketchybar --add item apple left \
+  --set apple icon=$'' icon.font="$FONT:Regular:16.0" label.drawing=off \
+        click_script="aerospace workspace-back-and-forth"
+
+sketchybar --add event aerospace_workspace_change
+for sid in $(aerospace list-workspaces --all); do
+  sketchybar --add item space.$sid left \
+    --subscribe space.$sid aerospace_workspace_change front_app_switched space_windows_change \
+    --set space.$sid label="$sid" icon.drawing=off \
+          label.padding_left=9 label.padding_right=9 \
+          background.color=0xffffffff background.corner_radius=6 background.height=22 \
+          background.drawing=off \
+          click_script="aerospace workspace $sid" \
+          script="$PLUGIN_DIR/aerospace.sh $sid"
+done
+
+sketchybar --add item sep left --set sep label="│" label.color=0x55ffffff icon.drawing=off
+
+sketchybar --add item front_app left \
+  --subscribe front_app front_app_switched \
+  --set front_app icon.drawing=off label.color=0xccffffff script="$PLUGIN_DIR/front_app.sh"
+
+# ---- Right: clock, battery, volume ----
+sketchybar --add item clock right \
+  --set clock update_freq=10 icon=$'' script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item battery right \
+  --subscribe battery system_woke power_source_change \
+  --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh"
+
+sketchybar --add item volume right \
+  --subscribe volume volume_change \
+  --set volume script="$PLUGIN_DIR/volume.sh"
+
+sketchybar --update
+
+# Hidden item that reacts to volume/brightness changes (Atoll's HUD)
+sketchybar --add item atoll_hud left \
+  --set atoll_hud drawing=off script="$PLUGIN_DIR/atoll_hud.sh" \
+  --subscribe atoll_hud volume_change brightness_change
+
+# ---- Split bar: one pill left of the notch, one right of it ----
+# Empty anchors sitting right against the notch (q = left of notch, e = right of notch)
+sketchybar --add item notch_l q --set notch_l width=6 icon.drawing=off label.drawing=off \
+           --add item notch_r e --set notch_r width=6 icon.drawing=off label.drawing=off
+
+PILL="background.color=0xdd000000 background.corner_radius=10 background.height=32 background.border_color=0x33ffffff background.border_width=1"
+sketchybar --add bracket left_pill apple '/space\..*/' sep front_app notch_l --set left_pill $=PILL \
+           --add bracket right_pill notch_r volume battery clock --set right_pill $=PILL
+
+# Slide the bar away while the real menu bar is showing
+pkill -x menubar_watch
+open -g "$CONFIG_DIR/helpers/NotchGuard.app" --args 2

@@ -1,0 +1,5 @@
+*.bak*
+.DS_Store
+# Built by install.sh
+config/sketchybar/helpers/NotchGuard.app/Contents/MacOS/
+config/sketchybar/helpers/NotchGuard.app/Contents/_CodeSignature/

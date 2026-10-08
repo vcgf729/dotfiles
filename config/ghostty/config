@@ -1,0 +1,35 @@
+# Ghostty config — black & white
+# docs: https://ghostty.org/docs/config
+background = #000000
+foreground = #ffffff
+cursor-color = #ffffff
+selection-background = #ffffff
+selection-foreground = #000000
+
+# Grayscale palette (normal 0-7, bright 8-15)
+palette = 0=#000000
+palette = 1=#bfbfbf
+palette = 2=#d9d9d9
+palette = 3=#cccccc
+palette = 4=#a6a6a6
+palette = 5=#b3b3b3
+palette = 6=#e6e6e6
+palette = 7=#f2f2f2
+palette = 8=#5a5a5a
+palette = 9=#d0d0d0
+palette = 10=#e8e8e8
+palette = 11=#dddddd
+palette = 12=#bbbbbb
+palette = 13=#c8c8c8
+palette = 14=#f0f0f0
+palette = 15=#ffffff
+
+font-size = 14
+window-padding-x = 12
+window-padding-y = 10
+background-opacity = 0.92
+background-blur = 20
+macos-titlebar-style = hidden
+cursor-style = bar
+mouse-hide-while-typing = true
+confirm-close-surface = false

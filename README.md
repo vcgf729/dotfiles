@@ -46,6 +46,10 @@ the top edge from the left side of the screen through the notch, so reaching
 for the workspace numbers or Atoll never reveals the macOS menu bar. To the
 right of the notch, the menu bar works as normal (set where with
 `menubar_block_until`).
+
+The bar also makes room for Atoll's smaller expansions: its volume/brightness
+HUD (`plugins/atoll_hud.sh`, ignoring auto-brightness) and its now-playing
+activity while music plays (`plugins/atoll_music.sh`, `music_width`).
 Timing and sizes live in `config/sketchybar/helpers/notchguard.conf` and are
 re-read live, so tweaking them needs no rebuild.
 

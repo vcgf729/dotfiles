@@ -22,7 +22,8 @@ HUD_W=${C[hud_width]:-400}
 DUR=${C[hud_duration]:-1.5}
 OPEN_FR=${C[hud_open_frames]:-10}
 CLOSE_FR=${C[hud_close_frames]:-36}
-CLOSED_GAP=210
+CLOSED_GAP=$(cat /tmp/sketchybar_base_gap 2>/dev/null || echo 210)
+(( HUD_W < CLOSED_GAP )) && HUD_W=$CLOSED_GAP
 TOKEN_FILE="/tmp/sketchybar_atoll_hud.$UID"
 
 # Width of the left pill tells us the current gap; if Atoll is fully open, leave it alone.

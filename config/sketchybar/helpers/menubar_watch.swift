@@ -26,7 +26,12 @@ func confText(_ key: String) -> String? { confValues[key] }
 func conf(_ key: String, _ fallback: Double) -> Double { confValues[key].flatMap(Double.init) ?? fallback }
 var atollOpenWidth: CGFloat { CGFloat(conf("atoll_open_width", 690)) }
 let atollOpenHeight: CGFloat = 200   // approx. height of the open panel
-let gapClosed = 210
+// Resting gap: the bare notch (210), or wider while Atoll shows now-playing
+// (written by plugins/atoll_music.sh).
+var gapClosed: Int {
+  (try? String(contentsOfFile: "/tmp/sketchybar_base_gap", encoding: .utf8))
+    .flatMap { Int($0.trimmingCharacters(in: .whitespacesAndNewlines)) } ?? 210
+}
 var atollOpen = false
 var pendingClose: DispatchWorkItem?
 

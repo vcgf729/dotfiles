@@ -52,6 +52,14 @@ sketchybar --add item volume right \
 
 sketchybar --update
 
+# The bar starts at the bare-notch gap; forget any saved music width
+rm -f /tmp/sketchybar_base_gap
+
+# Hidden item that widens the notch gap while Atoll shows now-playing
+sketchybar --add item atoll_music left \
+  --set atoll_music drawing=off update_freq=2 script="$PLUGIN_DIR/atoll_music.sh" \
+  --subscribe atoll_music system_woke
+
 # Hidden item that tells NotchGuard where the workspace numbers end
 sketchybar --add item guard_zone left \
   --set guard_zone drawing=off script="$PLUGIN_DIR/guard_zone.sh" \

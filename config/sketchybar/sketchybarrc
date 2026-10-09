@@ -56,9 +56,11 @@ sketchybar --update
 rm -f /tmp/sketchybar_base_gap
 
 # Hidden item that widens the notch gap while Atoll shows now-playing
+sketchybar --add event spotify_change com.spotify.client.PlaybackStateChanged \
+           --add event music_change com.apple.Music.playerInfo
 sketchybar --add item atoll_music left \
-  --set atoll_music drawing=off update_freq=2 script="$PLUGIN_DIR/atoll_music.sh" \
-  --subscribe atoll_music system_woke
+  --set atoll_music drawing=off update_freq=1 script="$PLUGIN_DIR/atoll_music.sh" \
+  --subscribe atoll_music system_woke spotify_change music_change
 
 # Hidden item that tells NotchGuard where the workspace numbers end
 sketchybar --add item guard_zone left \

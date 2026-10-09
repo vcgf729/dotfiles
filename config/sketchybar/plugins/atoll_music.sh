@@ -21,10 +21,24 @@ is_media() {
   done; return 1
 }
 
-if [ "${C[music_enabled]}" != "0" ] && playing_apps | is_media; then
-  WANT=${C[music_width]:-330}
+EVENT_FILE=/tmp/sketchybar_music_event.$UID
+if [ "$SENDER" = "spotify_change" ] || [ "$SENDER" = "music_change" ]; then
+  # Instant: the player told us its state (INFO is the notification's JSON)
+  touch $EVENT_FILE
+  if [ "${C[music_enabled]}" != "0" ] && [[ "$INFO" == *'"Player State":"Playing"'* || "$INFO" == *'"Player State": "Playing"'* ]]; then
+    WANT=${C[music_width]:-330}
+  else
+    WANT=210
+  fi
 else
-  WANT=210
+  # Polling (browsers etc.). Right after a play/pause event, trust the event:
+  # the system's audio flag lingers a few seconds after pausing.
+  [ -n "$(find /tmp -maxdepth 1 -name "sketchybar_music_event.$UID" -mtime -6s 2>/dev/null)" ] && exit 0
+  if [ "${C[music_enabled]}" != "0" ] && playing_apps | is_media; then
+    WANT=${C[music_width]:-330}
+  else
+    WANT=210
+  fi
 fi
 HAVE=$(cat $BASE_FILE 2>/dev/null || echo 210)
 [ "$WANT" = "$HAVE" ] && exit 0
@@ -36,4 +50,4 @@ LEFT=$(sketchybar --query left_pill | grep -A1 '"size"' | grep -oE '[0-9]+' | he
 FULL_OPEN_LEFT=$(( 756 - (${C[atoll_open_width]:-690} + 20) / 2 - 16 + 40 ))
 (( LEFT <= FULL_OPEN_LEFT )) && exit 0
 [ -n "$(find /tmp -maxdepth 1 -name "sketchybar_atoll_hud.$UID" -mtime -3s 2>/dev/null)" ] && exit 0
-sketchybar --animate tanh ${C[music_frames]:-40} --bar notch_width=$WANT
+sketchybar --animate tanh ${C[music_frames]:-30} --bar notch_width=$WANT

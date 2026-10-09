@@ -8,7 +8,20 @@ typeset -A C
 for k v in $(awk -F= '/^[a-z_]+ *=/{gsub(/ /,""); print $1, $2}' "$CONF" 2>/dev/null); do C[$k]=$v; done
 BASE_FILE=/tmp/sketchybar_base_gap
 
-if [ "${C[music_enabled]}" != "0" ] && pmset -g assertions | grep -q 'audio-out'; then
+# Which apps are playing audio right now (from the system's audio assertions)
+playing_apps() {
+  pmset -g assertions | awk '/Created for PID:/ {gsub(/[^0-9]/,"",$4); pid=$4} /audio-out/ && pid {print pid; pid=""}' |
+    while read pid; do ps -o comm= -p $pid 2>/dev/null | sed 's#.*/##'; done
+}
+# Only media players count (games and calls don't make Atoll show now-playing)
+APPS=${C[music_apps]:-Spotify,Music,zen,plugin-container,Safari,Google Chrome,firefox,Arc,Podcasts,TV}
+is_media() {
+  local a; while read a; do
+    for m in ${(s:,:)APPS}; do [[ "${a// /}" == "${m// /}"* ]] && return 0; done
+  done; return 1
+}
+
+if [ "${C[music_enabled]}" != "0" ] && playing_apps | is_media; then
   WANT=${C[music_width]:-330}
 else
   WANT=210

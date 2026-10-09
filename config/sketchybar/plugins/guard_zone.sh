@@ -1,10 +1,8 @@
 #!/bin/zsh
-# Writes how far the Apple logo + workspace numbers reach, so NotchGuard can
-# keep the macOS menu bar from popping up while the mouse is over them.
-sleep 0.3   # let the workspace items finish showing/hiding
-MAX=0
-for i in $(aerospace list-workspaces --all); do
-  read X W <<< $(sketchybar --query space.$i | awk -F'[][,]' '/"origin"/{x=$2} /"size"/ && !s {w=$2; s=1} END{print x+0, w+0}')
-  (( X > 0 && X + W > MAX )) && MAX=$(( X + W ))
-done
-echo $(( MAX + 8 )) > /tmp/sketchybar_guard_left
+# Tells NotchGuard how far from the left edge to block the macOS menu bar.
+# Everything from the left edge up to this x position (points) is blocked:
+# the Apple logo, the workspace numbers and Atoll. To the right of it, pushing
+# the mouse to the top edge shows the macOS menu bar as normal.
+CONF="$HOME/.config/sketchybar/helpers/notchguard.conf"
+X=$(awk -F= '{gsub(/ /,"")} $1=="menubar_block_until" {print $2}' "$CONF" 2>/dev/null)
+echo "${X:-890}" > /tmp/sketchybar_guard_left
